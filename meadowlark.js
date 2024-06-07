@@ -1,4 +1,5 @@
 const express = require('express');
+const fortune = require('./lib/fortune');
 
 const expressHandlebars = require('express-handlebars');
 
@@ -16,12 +17,11 @@ app.set('view engine', 'handlebars');
 
 app.get('/', (req, res) => res.render('home'));
 
-app.get('/about', (req, res) => res.render('about'));
-
 app.get('/about', (req, res) => {
-    res.type('text/plain');
-    res.send('About Meadowlark Travel');
-})
+    res.render('about', { fortune: fortune.getFortune() });
+});
+
+app.use(express.static(__dirname + '/public'));
 
 // 404 Page
 app.use((req, res) => {
@@ -39,3 +39,4 @@ app.use((err, req, res, next) => {
 })
 
 app.listen(port, () => console.log(`Listening on port ${port}...`));
+
