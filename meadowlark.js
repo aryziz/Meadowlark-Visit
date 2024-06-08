@@ -1,5 +1,5 @@
 const express = require('express');
-const fortune = require('./lib/fortune');
+const handlers = require('./lib/handlers');
 
 const expressHandlebars = require('express-handlebars');
 
@@ -15,28 +15,15 @@ app.engine('handlebars', expressHandlebars.engine({
 }));
 app.set('view engine', 'handlebars');
 
-app.get('/', (req, res) => res.render('home'));
+app.get('/', handlers.home);
 
-app.get('/about', (req, res) => {
-    res.render('about', { fortune: fortune.getFortune() });
-});
+app.get('/about', handlers.about);
 
 app.use(express.static(__dirname + '/public'));
 
-// 404 Page
-app.use((req, res) => {
-    res.type('text/plain');
-    res.status(404);
-    res.send('404 - Not Found');
-});
-
-// 500 page
-app.use((err, req, res, next) => {
-    console.error(err.message);
-    res.type('text/plain');
-    res.status(500);
-    res.send('500 - Internal Server Error');
-})
-
-app.listen(port, () => console.log(`Listening on port ${port}...`));
+if (require.main == module) {
+    app.listen(port, () => console.log(`Listening on port ${port}...`));
+} else {
+    module.exports = app;
+}
 
