@@ -13,6 +13,14 @@
         <header>
             {{> navbar}}
         </header>
+        {{#if flash}}
+        <div class="alert alert-dismissible fade show alert-{{flash.type}}"
+            role="alert">
+            <strong>{{flash.intro}}</strong> {{{flash.message}}}
+            <button type="button" class="btn-close" data-dismiss="alert"
+                aria-label="close"></button>
+        </div>
+        {{/if}}
 
         {{{body}}}
         {{{_sections.scripts}}}

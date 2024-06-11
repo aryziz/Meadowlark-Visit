@@ -1,10 +1,15 @@
-const express = require('express');
 const handlers = require('./lib/handlers');
 const weatherMiddleware = require('./lib/middleware/weather');
+const flashMiddleware = require('./lib/middleware/flash');
+const { credentials } = require('./config');
 
+// External
+const express = require('express');
 const expressHandlebars = require('express-handlebars');
 const bodyParser = require('body-parser');
 const multiparty = require('multiparty');
+const cookieParser = require('cookie-parser');
+const expressSession = require('express-session');
 
 require('dotenv').config();
 
@@ -25,25 +30,31 @@ app.engine('handlebars', expressHandlebars.engine({
 }));
 app.set('view engine', 'handlebars');
 
+// Middleware
 app.use(express.static(__dirname + '/public'));
-app.use(weatherMiddleware);
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(cookieParser(credentials.cookieSecret));
+app.use(expressSession({
+    resave: false,
+    saveUninitialized: false,
+    secret: credentials.cookieSecret,
+}));
+
+app.use(weatherMiddleware);
+app.use(flashMiddleware);
 
 app.get('/', handlers.home);
 
 app.get('/about', handlers.about);
 
-// Showing headers from a request
-app.get('/headers', handlers.showHeader);
-// Section test
-app.get('/section-test', handlers.sectionTest);
 // Newsletter
-app.get('/newsletter-signup', handlers.newsletterSignup);
-app.post('/newsletter-signup/process', handlers.newsletterSignupProcess);
-app.get('/newsletter-signup/thank-you', handlers.newsletterSignupThankYou);
-app.get('/newsletter', handlers.newsletter);
-app.post('/api/newsletter-signup', handlers.api.newsletterSignup);
+// handlers for browser-based form submission
+app.get('/newsletter-signup', handlers.newsletterSignup)
+app.post('/newsletter-signup/process', handlers.newsletterSignupProcess)
+app.get('/newsletter-signup/thank-you', handlers.newsletterSignupThankYou)
+app.get('/newsletter-archive', handlers.newsletterSignupThankYou)
+
 // Vacation photo
 app.get('/contest/vacation-photo', handlers.vacationPhotoContest);
 app.post('/contest/vacation-photo/:year/:month', (req, res) => {
