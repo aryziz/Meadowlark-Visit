@@ -16,7 +16,10 @@
     "express": "^4.19.2",
     "express-handlebars": "^7.1.2",
     "express-session": "^1.18.0",
-    "multiparty": "^4.2.3"
+    "html-to-formatted-text": "^2.7.0",
+    "morgan": "^1.10.0",
+    "multiparty": "^4.2.3",
+    "nodemailer": "^6.9.13"
   },
   "devDependencies": {
     "@eslint/js": "^9.4.0",

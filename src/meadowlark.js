@@ -2,6 +2,7 @@ const handlers = require('./lib/handlers');
 const weatherMiddleware = require('./lib/middleware/weather');
 const flashMiddleware = require('./lib/middleware/flash');
 const { credentials } = require('./config');
+const { sendMailSingleRec, sendMailMultipleRec } = require('./email/emailService');
 
 // External
 const express = require('express');
@@ -10,6 +11,7 @@ const bodyParser = require('body-parser');
 const multiparty = require('multiparty');
 const cookieParser = require('cookie-parser');
 const expressSession = require('express-session');
+const morgan = require('morgan');
 
 require('dotenv').config();
 
@@ -32,6 +34,7 @@ app.set('view engine', 'handlebars');
 
 // Middleware
 app.use(express.static(__dirname + '/public'));
+app.use(morgan('combined'))
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser(credentials.cookieSecret));
@@ -66,6 +69,16 @@ app.post('/contest/vacation-photo/:year/:month', (req, res) => {
 });
 app.get('/contest/vacation-photo-thank-you', handlers.vacationPhotoContestProcessThankYou);
 
+// Cart
+app.get('*', (req, res) => {
+    req.session.cart = [
+        { id: '82RgrqGCAHqCf6rA2vujbT', qty: 1, guests: 2 },
+        { id: 'bqBtwqxpB4ohuxCBXRE9tq', qty: 1 },
+    ];
+    res.render('cart/cart-home');
+});
+app.get('/cart', handlers.checkoutThankYou);
+app.post('/cart/checkout', handlers.processCheckout);
 
 if (require.main == module) {
     app.listen(port, () => console.log(`Listening on port ${port}...`));

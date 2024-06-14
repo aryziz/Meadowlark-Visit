@@ -1,8 +1,11 @@
 const fortune = require('./fortune');
+const { sendMailSingleRec } = require('../email/emailService');
 
+/* eslint-disable no-useless-escape */
 const VALID_EMAIL_REGEX = new RegExp('^[a-zA-Z0-9.!#$%&\'*+\/=?^_`{|}~-]+@' +
     '[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?' +
     '(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$');
+/* eslint-enable no-useless-escape */
 
 class NewsletterSignup {
     constructor({ name, email }) {
@@ -14,7 +17,16 @@ class NewsletterSignup {
     }
 }
 
-exports.home = (req, res) => res.render('home', { today: new Date().toUTCString() });
+exports.home = (req, res) => {
+    res.render('home', {
+        today: new Date().toUTCString()
+    });
+    req.session.flash = {
+        type: 'warning',
+        intro: 'New Feature!',
+        message: 'Check out new flash messages'
+    }
+}
 
 exports.about = (req, res) => res.render('about', { fortune: fortune.getFortune() });
 
@@ -48,7 +60,7 @@ exports.newsletterSignupProcess = (req, res) => {
             req.session.flash = {
                 type: 'danger',
                 intro: 'Database error!',
-                message: 'There was a database error; please try again later.',
+                message: 'There was a database error; please try again later. Error code:' + err,
             }
             return res.redirect(303, '/newsletter-archive')
         })
@@ -91,6 +103,46 @@ exports.vacationPhotoContestProcess = (req, res, fields, files) => {
     console.log(`Files: ${files}`);
     res.redirect(303, '/contest/vacation-photo-thank-you');
 }
+
+exports.processCheckout = (req, res, next) => {
+    const cart = req.session.cart;
+    if (!cart) return next(new Error('Cart does not exist.'));
+
+    const user_name = req.body.name || '';
+    const user_email = req.body.email || '';
+
+    if (!user_email.match(VALID_EMAIL_REGEX))
+        return next(new Error('Invalid email address'));
+
+    cart.number = Math.random().toString().replace(/^0\.0*/, '');
+    cart.billing = {
+        name: user_name,
+        email: user_email
+    };
+
+    // Render the email template
+    res.render('email/cart-thank-you', { layout: null, cart: cart }, (err, html) => {
+        if (err) {
+            console.log('Error in email template', err);
+            return next(err);
+        }
+
+        console.log(`Rendered email: ${html}`);
+
+        sendMailSingleRec(cart.billing.email, 'Thank You!', html)
+            .then(info => {
+                console.log('Sent!' + info);
+                // Pass the billing information to the thank-you page
+                res.render('cart/cart-thank-you', { cart });
+            })
+            .catch(err => {
+                console.error('Unable to send confirmation, ' + err.message);
+                next(err);
+            });
+    });
+};
+
+exports.checkoutThankYou = (req, res) => res.render('cart/cart-thank-you');
 
 exports.notFound = (req, res) => res.render('404');
 
