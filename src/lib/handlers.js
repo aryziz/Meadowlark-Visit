@@ -1,5 +1,5 @@
 const fortune = require('./fortune');
-const { sendMailSingleRec } = require('../email/emailService');
+const { sendMailSingleRec } = require('./email/emailService');
 
 /* eslint-disable no-useless-escape */
 const VALID_EMAIL_REGEX = new RegExp('^[a-zA-Z0-9.!#$%&\'*+\/=?^_`{|}~-]+@' +

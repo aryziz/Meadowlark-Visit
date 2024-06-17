@@ -1,4 +1,4 @@
-const { credentials } = require('../config');
+const { credentials } = require('../../config');
 const htmlToFormattedText = require('html-to-formatted-text');
 
 

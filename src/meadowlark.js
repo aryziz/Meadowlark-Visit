@@ -2,7 +2,7 @@ const handlers = require('./lib/handlers');
 const weatherMiddleware = require('./lib/middleware/weather');
 const flashMiddleware = require('./lib/middleware/flash');
 const { credentials } = require('./config');
-const { sendMailSingleRec, sendMailMultipleRec } = require('./email/emailService');
+const { sendMailSingleRec, sendMailMultipleRec } = require('./lib/email/emailService');
 
 // External
 const express = require('express');
