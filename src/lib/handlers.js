@@ -18,14 +18,15 @@ class NewsletterSignup {
 }
 
 exports.home = (req, res) => {
-    res.render('home', {
-        today: new Date().toUTCString()
-    });
     req.session.flash = {
         type: 'warning',
         intro: 'New Feature!',
-        message: 'Check out new flash messages'
+        message: 'Check out new flash messages',
+        SameSite: 'None'
     }
+    res.render('home', {
+        today: new Date().toISOString().split('T')[0]
+    });
 }
 
 exports.about = (req, res) => res.render('about', { fortune: fortune.getFortune() });
@@ -53,6 +54,7 @@ exports.newsletterSignupProcess = (req, res) => {
                 type: 'success',
                 intro: 'Thank you!',
                 message: 'You have now been signed up for the newsletter.',
+                SameSite: 'None'
             }
             return res.redirect(303, '/newsletter-archive')
         })
@@ -61,6 +63,7 @@ exports.newsletterSignupProcess = (req, res) => {
                 type: 'danger',
                 intro: 'Database error!',
                 message: 'There was a database error; please try again later. Error code:' + err,
+                SameSite: 'None'
             }
             return res.redirect(303, '/newsletter-archive')
         })

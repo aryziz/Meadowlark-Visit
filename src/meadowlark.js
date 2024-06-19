@@ -3,6 +3,11 @@ const weatherMiddleware = require('./lib/middleware/weather');
 const flashMiddleware = require('./lib/middleware/flash');
 const { credentials } = require('./config');
 const { sendMailSingleRec, sendMailMultipleRec } = require('./lib/email/emailService');
+const error = require('./lib/error/error-handling');
+
+const fs = require('fs');
+const cluster = require('cluster');
+
 
 // External
 const express = require('express');
@@ -34,7 +39,6 @@ app.set('view engine', 'handlebars');
 
 // Middleware
 app.use(express.static(__dirname + '/public'));
-app.use(morgan('combined'))
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser(credentials.cookieSecret));
@@ -46,10 +50,33 @@ app.use(expressSession({
 
 app.use(weatherMiddleware);
 app.use(flashMiddleware);
+app.use((req, res, next) => {
+    if (cluster.isWorker)
+        console.log(`Worker ${cluster.worker.id} received request`);
+    next();
+});
+app.use((err, req, res, next) => {
+    console.error('err.message, err.stack');
+    app.status(500).render('500');
+})
+
+switch (app.get('env')) {
+    case 'development':
+        app.use(morgan('dev'));
+        break;
+    case 'production':
+        const stream = fs.createWriteStream(__dirname + '/log/access.log', { flags: 'a' });
+        app.use(morgan('combined', { stream }));
+        break;
+}
 
 app.get('/', handlers.home);
-
 app.get('/about', handlers.about);
+
+// Error
+app.get('/fail', error.failError);
+app.get('/epic-fail', error.epicFail);
+
 
 // Newsletter
 // handlers for browser-based form submission
@@ -80,8 +107,15 @@ app.get('*', (req, res) => {
 app.get('/cart', handlers.checkoutThankYou);
 app.post('/cart/checkout', handlers.processCheckout);
 
-if (require.main == module) {
-    app.listen(port, () => console.log(`Listening on port ${port}...`));
+// Server
+const startServer = (port) =>
+    app.listen(port, () => {
+        console.log(`Express started in ${app.get('env')} mode. ` +
+            `Listening on port ${port}...`);
+    });
+
+if (require.main === module) {
+    startServer(process.env.PORT || 3000);
 } else {
-    module.exports = app;
+    module.exports = startServer;
 }
