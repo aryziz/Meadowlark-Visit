@@ -7,6 +7,7 @@ const error = require('./lib/error/error-handling');
 
 const fs = require('fs');
 const cluster = require('cluster');
+require('./db/db');
 
 
 // External
@@ -96,6 +97,9 @@ app.post('/contest/vacation-photo/:year/:month', (req, res) => {
 });
 app.get('/contest/vacation-photo-thank-you', handlers.vacationPhotoContestProcessThankYou);
 
+// Vacation
+app.get('/vacations', handlers.listVacations);
+
 // Cart
 app.get('*', (req, res) => {
     req.session.cart = [
@@ -104,6 +108,9 @@ app.get('*', (req, res) => {
     ];
     res.render('cart/cart-home');
 });
+
+app.get('/notify-me-when-in-season', handlers.notifyWhenInSeasonForm);
+app.post('/notify-me-when-in-season', handlers.notifyWhenInSeasonProcess)
 app.get('/cart', handlers.checkoutThankYou);
 app.post('/cart/checkout', handlers.processCheckout);
 
