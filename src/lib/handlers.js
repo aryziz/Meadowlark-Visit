@@ -111,9 +111,6 @@ const vacationPhotosDir = pathUtils.join(dataDir, 'vacation-photos');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
 if (!fs.existsSync(vacationPhotosDir)) fs.mkdirSync(vacationPhotosDir);
 
-function saveContestEntry(contestName, email, year, month, photoPath) {
-}
-
 const { promisify } = require('util');
 const mkdir = promisify(fs.mkdir);
 const rename = promisify(fs.rename);
@@ -128,18 +125,39 @@ exports.vacationPhotoContestProcess = async (req, res, fields, files) => {
     res.redirect(303, '/contest/vacation-photo-thank-you');
 }
 
+exports.setCurrency = (req, res) => {
+    req.session.currency = req.params.currency;
+    return res.redirect(303, '/vacations');
+}
+
+function convertFromUSD(val, currency) {
+    switch (currency) {
+        case 'USD': return val * 1;
+        case 'GBP': return val * 0.79;
+        case 'BTC': return val * 0.00078;
+        default: return NaN;
+    }
+}
+
 exports.listVacations = async (req, res) => {
     const vacations = await db.getVacations({ available: true });
+    const currency = req.session.currency || 'USD';
+    const currencyToSymbol = { 'USD': '$', 'GBP': '£', 'BTC': '₿' }
     const context = {
         vacations: vacations.map(vacation => {
             return {
                 sku: vacation.sku,
                 name: vacation.name,
                 description: vacation.description,
-                price: '$' + vacation.price,
+                price: currencyToSymbol[currency] + convertFromUSD(vacation.price, currency).toFixed(2),
                 inSeason: vacation.inSeason,
             }
         })
+    }
+    switch (currency) {
+        case 'USD': context.currencyUSD = 'selected'; break;
+        case 'GBP': context.currencyGBP = 'selected'; break;
+        case 'BTC': context.currencyBTC = 'selected'; break;
     }
     res.render('vacations', context);
 }
@@ -151,6 +169,7 @@ exports.notifyWhenInSeasonProcess = async (req, res) => {
     await db.addVacationInSeasonListener(email, sku);
     return res.redirect(303, '/vacations');
 }
+
 
 exports.processCheckout = (req, res, next) => {
     const cart = req.session.cart;

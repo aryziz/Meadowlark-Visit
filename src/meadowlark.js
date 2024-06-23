@@ -17,11 +17,21 @@ const bodyParser = require('body-parser');
 const multiparty = require('multiparty');
 const cookieParser = require('cookie-parser');
 const expressSession = require('express-session');
+const Redis = require('redis');
+const preRedisStore = require('connect-redis').default;
 const morgan = require('morgan');
-
 require('dotenv').config();
 
 const app = express();
+
+const redisClient = Redis.createClient({
+    url: credentials.redis.url
+});
+redisClient.connect().catch(console.error);
+
+const RedisStore = new preRedisStore({
+    client: redisClient
+});
 
 const port = process.env.PORT || 3000;
 
@@ -47,6 +57,7 @@ app.use(expressSession({
     resave: false,
     saveUninitialized: false,
     secret: credentials.cookieSecret,
+    store: RedisStore
 }));
 
 app.use(weatherMiddleware);
@@ -56,10 +67,6 @@ app.use((req, res, next) => {
         console.log(`Worker ${cluster.worker.id} received request`);
     next();
 });
-app.use((err, req, res, next) => {
-    console.error('err.message, err.stack');
-    app.status(500).render('500');
-})
 
 switch (app.get('env')) {
     case 'development':
@@ -99,16 +106,7 @@ app.get('/contest/vacation-photo-thank-you', handlers.vacationPhotoContestProces
 
 // Vacation
 app.get('/vacations', handlers.listVacations);
-
-// Cart
-app.get('*', (req, res) => {
-    req.session.cart = [
-        { id: '82RgrqGCAHqCf6rA2vujbT', qty: 1, guests: 2 },
-        { id: 'bqBtwqxpB4ohuxCBXRE9tq', qty: 1 },
-    ];
-    res.render('cart/cart-home');
-});
-
+app.get('/set-currency/:currency', handlers.setCurrency);
 app.get('/notify-me-when-in-season', handlers.notifyWhenInSeasonForm);
 app.post('/notify-me-when-in-season', handlers.notifyWhenInSeasonProcess)
 app.get('/cart', handlers.checkoutThankYou);
@@ -124,5 +122,5 @@ const startServer = (port) =>
 if (require.main === module) {
     startServer(process.env.PORT || 3000);
 } else {
-    module.exports = startServer;
+    module.exports = app;
 }
